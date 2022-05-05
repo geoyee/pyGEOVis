@@ -9,7 +9,7 @@ with open("requirements.txt") as fin:
 
 setuptools.setup(
     name="pygeovis",
-    version="0.1.0",
+    version="0.0.1",
     author="geoyee",
     author_email="geoyee@yeah.net",
     description="Visualize geo-tiff/json based on folium.",
