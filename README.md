@@ -5,13 +5,22 @@ Visualize geo-tiff/json based on [folium](https://github.com/python-visualizatio
 ## USE
 
 ```python
-from pygeovis import Raster
+from pygeovis import Geovis
 
-raster = Raster("data/pred.tif")
-raster.display()
+Geovis.showRaster(
+    raster_path="data/pred.tif",
+    band_list=[1]
+)
 ```
+
+![U8257G4V`W(B(HK5M9 ~UK](https://user-images.githubusercontent.com/71769312/166859742-fa826dbb-076e-487d-b66b-56c348562f18.png)
 
 ## TODO
 
-- [ ] 【TEST】Fix issue about CRS (just support WGS84).
+- [x] Fix issue about CRS (just support WGS84).
 - [ ] Add `geojson`.
+- [ ] Adaptive zoom.
+
+## TEST
+
+- [ ] Fix issue about CRS (just support WGS84).

@@ -1,1 +1,1 @@
-from .raster import Raster
+from .geovis import Geovis

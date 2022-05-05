@@ -4,61 +4,19 @@ from skimage import exposure
 from folium import folium, Map, raster_layers, LayerControl
 from .converter import Converter
 
-try:
-    from osgeo import gdal
-except:
-    import gdal
-
 
 class Raster(object):
     def __init__(
         self, path: str, band_list: Union[List[int], Tuple[int], None] = None
     ) -> None:
         super(Raster, self).__init__()
-        self.path = path
-        self.__src_data = gdal.Open(path)
-        self.__getInfo()
+        self.src_data = Converter.openAsWGS84(path)
         self.setBands(band_list)
+        self.getInfo()
 
-    def setBands(self, band_list: Union[List[int], Tuple[int], None]) -> None:
-        self.bands = self.__src_data.RasterCount
-        if band_list is None:
-            if self.bands == 3:
-                band_list = [1, 2, 3]
-            else:
-                band_list = [1]
-        if len(band_list) > self.bands:
-            raise ValueError(
-                "The lenght of band_list must be less than {0}.".format(str(self.bands))
-            )
-        if max(band_list) > self.bands or min(band_list) < 1:
-            raise ValueError(
-                "The range of band_list must within [1, {0}].".format(str(self.bands))
-            )
-        self.band_list = band_list
-
-    def getArray(self) -> np.ndarray:
-        return self.__getArray(self.__src_data, self.band_list)
-
-    def display(
-        self, display_band: Union[List[int], Tuple[int], None] = None
-    ) -> folium.Map:
-        if display_band is None:
-            display_band = self.band_list
-        band_num = len(display_band)
-        if band_num != 1 and band_num != 3:
-            raise ValueError("display_band must be 1 or 3, ont {}.".format(band_num))
-        wgs_data = Converter.openAsWGS84(self.path)
-        wgs_image = self.__getArray(wgs_data, display_band, True)
-        wgs_range = self.__getWGS84Range(
-            wgs_data.GetProjection(),
-            wgs_data.GetGeoTransform(),
-            wgs_data.RasterYSize,
-            wgs_data.RasterXSize,
-        )
-        wgs_center = self.__getWGS84Center(wgs_range)
-        map = Map(location=wgs_center, zoom_start=15)
-        img = raster_layers.ImageOverlay(wgs_image, wgs_range)
+    def display(self) -> folium.Map:
+        map = Map(location=self.wgs_center, zoom_start=16)
+        img = raster_layers.ImageOverlay(self.getArray(), self.wgs_range)
         img.add_to(map)
         LayerControl().add_to(map)
         return map
@@ -66,7 +24,7 @@ class Raster(object):
     @classmethod
     def toUint8(self, im: np.ndarray) -> np.ndarray:
         # simple image standardization
-        def __sample_norm(image):
+        def _sample_norm(image):
             stretches = []
             if len(image.shape) == 3:
                 for b in range(image.shape[-1]):
@@ -80,32 +38,52 @@ class Raster(object):
 
         dtype = im.dtype.name
         if dtype != "uint8":
-            im = __sample_norm(im)
+            im = _sample_norm(im)
         return im
 
-    def __getInfo(self) -> None:
-        self.width = self.__src_data.RasterXSize
-        self.height = self.__src_data.RasterYSize
-        self.geotf = self.__src_data.GetGeoTransform()
-        self.proj = self.__src_data.GetProjection()
+    def setBands(self, band_list: Union[List[int], Tuple[int], None]) -> None:
+        self.bands = self.src_data.RasterCount
+        if band_list is None:
+            if self.bands == 3:
+                band_list = [1, 2, 3]
+            else:
+                band_list = [1]
+        band_list_lens = len(band_list)
+        if band_list_lens != 1 and band_list_lens != 3:
+            raise ValueError(
+                "The lenght of band_list must be 1 or 3, not {}.".format(
+                    str(band_list_lens)
+                )
+            )
+        if max(band_list) > self.bands or min(band_list) < 1:
+            raise ValueError(
+                "The range of band_list must within [1, {}].".format(str(self.bands))
+            )
+        self.band_list = band_list
 
-    def __getWGS84Range(self, proj: str, geotf: Tuple, height: int, width: int) -> List:
-        converter = Converter(proj, geotf)
-        lat1, lon1 = converter.xy2Latlon(height - 1, 0)
-        lat2, lon2 = converter.xy2Latlon(0, width - 1)
+    def getInfo(self) -> None:
+        self.width = self.src_data.RasterXSize
+        self.height = self.src_data.RasterYSize
+        self.geotf = self.src_data.GetGeoTransform()
+        self.proj = self.src_data.GetProjection()  # WGS84
+        self.wgs_range = self.getWGS84Range()
+        self.wgs_center = self.getWGS84Center()
+
+    def getWGS84Range(self) -> List:
+        converter = Converter(self.proj, self.geotf)
+        lat1, lon1 = converter.xy2Latlon(self.height - 1, 0)
+        lat2, lon2 = converter.xy2Latlon(0, self.width - 1)
         return [[lon1, lat1], [lon2, lat2]]
 
-    def __getWGS84Center(self, range) -> List:
-        clat = (range[0][0] + range[1][0]) / 2
-        clon = (range[0][1] + range[1][1]) / 2
+    def getWGS84Center(self) -> List:
+        clat = (self.wgs_range[0][0] + self.wgs_range[1][0]) / 2
+        clon = (self.wgs_range[0][1] + self.wgs_range[1][1]) / 2
         return [clat, clon]
 
-    def __getArray(
-        self, src_data: gdal.Dataset, band_list: List, to_uint8: bool = False
-    ) -> np.ndarray:
+    def getArray(self) -> np.ndarray:
         band_array = []
-        for b in band_list:
-            band_i = src_data.GetRasterBand(b).ReadAsArray()
+        for b in self.band_list:
+            band_i = self.src_data.GetRasterBand(b).ReadAsArray()
             band_array.append(band_i)
         ima = np.stack(band_array, axis=0)
         if self.bands == 1:
@@ -115,6 +93,5 @@ class Raster(object):
             ima = ima.squeeze()
         else:
             ima = ima.transpose((1, 2, 0))
-        if to_uint8:
-            ima = Raster.toUint8(ima)
+        ima = Raster.toUint8(ima)
         return ima
