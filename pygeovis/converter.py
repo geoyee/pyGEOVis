@@ -1,8 +1,17 @@
+import os.path as osp
 from typing import List
+from subprocess import call
 try:
     from osgeo import osr
 except:
     import osr
+
+
+def convert_WGS84(infile: str, outfile: str="output.tif") -> bool:
+    if not osp.exists(infile):
+        raise FileNotFoundError("{} not found.".format(infile))
+    retcode = call(["gdalwarp", infile, outfile, "-t_srs", '"+proj=longlat', '+ellps=WGS84"'])
+    return (retcode == 0)
 
 
 class Converter(object):
