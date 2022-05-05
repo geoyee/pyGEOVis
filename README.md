@@ -4,8 +4,6 @@ Visualize geo-tiff/json based on [folium](https://github.com/python-visualizatio
 
 ## USE
 
-[Demo](demo.ipynb)
-
 ```python
 from pygeovis import Raster
 
