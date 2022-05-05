@@ -1,17 +1,11 @@
 import os.path as osp
 from typing import List
-from subprocess import call
+
 try:
-    from osgeo import osr
+    from osgeo import gdal, osr
 except:
+    import gdal
     import osr
-
-
-def convert_WGS84(infile: str, outfile: str="output.tif") -> bool:
-    if not osp.exists(infile):
-        raise FileNotFoundError("{} not found.".format(infile))
-    retcode = call(["gdalwarp", infile, outfile, "-t_srs", '"+proj=longlat', '+ellps=WGS84"'])
-    return (retcode == 0)
 
 
 class Converter(object):
@@ -23,13 +17,15 @@ class Converter(object):
         # target data
         self.target = osr.SpatialReference()
         self.target.ImportFromEPSG(4326)
+        
+    @classmethod
+    def openAsWGS84(self, path: str) -> gdal.Dataset:
+        if not osp.exists(path):
+            raise FileNotFoundError("{} not found.".format(path))
+        result = gdal.Warp("", path, dstSRS="EPSG:4326", format="VRT")
+        return result
 
-    def get_geo_range(self, width: int, height: int) -> List:
-        lat1, lon1 = self.xy2latlon(height - 1, 0)
-        lat2, lon2 = self.xy2latlon(0, width - 1)
-        return [[lon1, lat1], [lon2, lat2]]
-
-    def xy2latlon(self, row: int, col: int) -> List:
+    def xy2Latlon(self, row: int, col: int) -> List:
         px = self.geotf[0] + col * self.geotf[1] + row * self.geotf[2]
         py = self.geotf[3] + col * self.geotf[4] + row * self.geotf[5]
         ct = osr.CoordinateTransformation(self.source, self.target)

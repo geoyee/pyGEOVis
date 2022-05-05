@@ -6,8 +6,15 @@ Visualize geo-tiff/json based on [folium](https://github.com/python-visualizatio
 
 [Demo](demo.ipynb)
 
+```python
+from pygeovis import Raster
+
+raster = Raster("data/pred.tif")
+raster.display()
+```
+
 ## TODO
 
-- [ ] Fix issue about CRS (just support WGS84).
+- [ ] 【TEST】Fix issue about CRS (just support WGS84).
 - [ ] Add `geojson`.
 
