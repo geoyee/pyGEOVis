@@ -17,7 +17,7 @@ class Converter(object):
         # target data
         self.target = osr.SpatialReference()
         self.target.ImportFromEPSG(4326)
-        
+
     @classmethod
     def openAsWGS84(self, path: str) -> gdal.Dataset:
         if not osp.exists(path):

@@ -17,4 +17,3 @@ raster.display()
 
 - [ ] 【TEST】Fix issue about CRS (just support WGS84).
 - [ ] Add `geojson`.
-
