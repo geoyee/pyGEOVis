@@ -1,7 +1,7 @@
 from typing import List, Tuple, Union
 import numpy as np
 from skimage import exposure
-from folium import folium, Map, raster_layers, LayerControl
+from folium.raster_layers import ImageOverlay
 from .converter import Converter
 
 
@@ -14,12 +14,9 @@ class Raster(object):
         self.setBands(band_list)
         self.getInfo()
 
-    def display(self) -> folium.Map:
-        map = Map(location=self.wgs_center, zoom_start=16)
-        img = raster_layers.ImageOverlay(self.getArray(), self.wgs_range)
-        img.add_to(map)
-        LayerControl().add_to(map)
-        return map
+    def getLayer(self) -> ImageOverlay:
+        layer = ImageOverlay(self.getArray(), self.wgs_range)
+        return layer, self.wgs_center
 
     @classmethod
     def toUint8(self, im: np.ndarray) -> np.ndarray:
