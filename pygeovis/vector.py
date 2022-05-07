@@ -18,9 +18,9 @@ class Vector(object):
         layer = GeoJson(self.json_data)
         return layer, self.center
 
-    def getCenter(self) -> List:
-        clat = 0
-        clon = 0
+    def getCenter(self) -> List[float]:
+        clat = 0.0
+        clon = 0.0
         feats = self.json_data["features"]
         lens = len(feats)
         for feat in feats:
@@ -35,14 +35,12 @@ class Vector(object):
                         geo["type"]
                     )
                 )
-            plat = 0
-            plon = 0
+            plat = 0.0
+            plon = 0.0
             plens = len(geo_points)
             for point in geo_points:
                 plat += point[1]
                 plon += point[0]
-            plat /= plens
-            plon /= plens
-            clat += plat
-            clon += plon
+            clat += plat / plens
+            clon += plon / plens
         return [clat / lens, clon / lens]
