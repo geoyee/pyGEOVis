@@ -6,7 +6,13 @@ from .vector import Vector
 
 class Geovis(object):
     def __init__(self) -> None:
-        self.map = Map(location=[0, 0], zoom_start=16, max_zoom=21, prefer_canvas=True)
+        self.map = Map(
+            location=[0, 0],
+            tiles="GeoQ China Community",
+            zoom_start=16,
+            max_zoom=21,
+            prefer_canvas=True,
+        )
         self.center = None
 
     def addRaster(

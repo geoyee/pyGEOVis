@@ -1,4 +1,4 @@
 # GDAL
-folium
+foliume
 geojson
 scikit-image
